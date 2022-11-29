@@ -1,6 +1,15 @@
 package com.adamsoft.jpa.repository;
 
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.adamsoft.jpa.entity.Memo;
 
@@ -21,4 +30,34 @@ import com.adamsoft.jpa.entity.Memo;
  */
 public interface MemoRepository extends JpaRepository<Memo, Long> {
 
+	
+	//Query 메서드의 이용 : mno값이 70에서 80사이의 객체를 검색하고, 역순으로 정렬
+	List<Memo> findByMnoBetweenOrderByMnoDesc(Long from, Long to);
+	
+	//Memo 객체의 Mno값이 10부터 50사이의 객체를 내림차순 정렬해서 검색하고 페이징
+	Page<Memo> findByMnoBetween(Long from,Long to, Pageable pageable); 
+	
+	//deleteBy로 시작하는 메서드를 이용한 mno가 10보다 작은 데이터 삭제
+	void deleteMemoByMnoLessThan(Long num);
+	
+	
+	//파라미터 바인딩 
+	@Transactional
+	@Modifying
+	@Query("update Memo m set m.memoText = :memoText where m.mno = :mno")
+	int updateMemoText(@Param("mno") Long mno, @Param("memoText") String memoText);
+	
+	@Transactional
+	@Modifying
+	@Query("update Memo m set m.memoText = :#{#param.memoText} where m.mno = :#{#param.mno}")
+	int updateMemoText(@Param("param") Memo memo);
+	
+	//페이징 처리
+	@Query(value="select m from Memo m where m.mno > :mno",countQuery = "select count(m) from Memo m where m.mno > :mno")
+    Page<Memo> getListWithQuery(@Param("mno") Long mno, Pageable pageable);
+	
+	//Object[] 리턴을 사용
+	@Query(value = "select m.mno, m.memoText, CURRENT_DATE from Memo m where m.mno > :mno", countQuery = "select count(m) from Memo m where m.mno > :mno")
+    Page<Object[]> getListWithQueryObject(@Param("mno") Long mno, Pageable pageable);
+	
 }

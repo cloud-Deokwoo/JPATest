@@ -1,7 +1,11 @@
 package com.adamsoft.jpa.repository;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import javax.transaction.Transactional;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -112,5 +117,52 @@ public class RepositoryTest {
 		});
 	}
 	
+	@Test
+	public void testQueryMethods() {
+		List<Memo> list = memoRepository.findByMnoBetweenOrderByMnoDesc(70L, 80L);
+		for (Memo memo:list) {
+			log.info(memo);
+		}
+	}
 	
+	@Test
+	public void testQueryMethodsPaging() {
+		Pageable pageable = PageRequest.of(0, 10,Sort.by("mno").descending());
+		Page<Memo> result = memoRepository.findByMnoBetween(10L, 50L, pageable);
+		result.get().forEach(memo -> log.info(memo));
+	}
+	
+	@Commit //작업을 완료하기 위해서 설정
+	@Transactional  //설정하지 않으면 에러
+	@Test
+	public void testDeleteQueryMethods() {
+		memoRepository.deleteMemoByMnoLessThan(10L);
+	}
+	
+	//파라미터 바인딩 
+	@Test
+	public void testUpdateQuery(){
+	 	log.info(memoRepository.updateMemoText(11L,"@Query를 이용한 수정"));
+	  	log.info(memoRepository.updateMemoText(Memo.builder().mno(12L).memoText("@Query를 이용한 수정").build()));	
+	}
+	
+	//페이징 처리
+	@Test
+	public void testSelectQuery(){
+	    Pageable pageable = PageRequest.of(0,10,Sort.by("mno").descending());
+	    Page<Memo> page = memoRepository.getListWithQuery(50L,pageable);
+	    for(Memo memo:page){
+	      	log.info(memo);
+	    }
+	}
+	
+	//Object[] 리턴 테스트 
+	@Test
+    public void testSelectQueryObjectReturn(){
+        Pageable pageable = PageRequest.of(0,10,Sort.by("mno").descending());
+        Page<Object[]> page = memoRepository.getListWithQueryObject(50L, pageable);
+        for(Object[] arr:page){
+        	log.info(Arrays.toString(arr));
+        }
+    }
 }
